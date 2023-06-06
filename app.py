@@ -9,6 +9,7 @@ import streamlit as st
 import matplotlib.pyplot as plt
 from openpyxl import load_workbook
 from streamlit_option_menu import option_menu
+from streamlit_extras.metric_cards import style_metric_cards
 from datetime import datetime, date, timedelta
 from dateutil.relativedelta import relativedelta
 from PIL import Image
@@ -22,7 +23,9 @@ st.set_page_config(layout='wide', initial_sidebar_state='expanded')
 option_selected = option_menu(
 	menu_title=None,
 	options=["Planeación financiera", "Escenarios", "Indicadores"],
-    orientation="horizontal"
+    orientation="horizontal",
+    icons=["person-circle","calculator-fill","graph-up-arrow"],
+    styles={"nav-link": {"--hover-color": "white"}}
 )
 #------------------------------------------------------------------------------------------------#
 #------- Caché to download DataFrame as CSV ----------
@@ -66,6 +69,12 @@ def decremento_membresias(df_membresias, tasa_decremento):
     df_membresias_nuevas["Platino"] = df_membresias["Platino"]*(1 - (tasa_decremento/100))
     return df_membresias_nuevas
 
+def guardar_dataframes(nombre_libro, df, name_df):
+    with pd.ExcelWriter(nombre_libro, mode = "a", engine = "openpyxl", if_sheet_exists = "replace") as writer:
+        df.round(decimals = 2)
+        df.astype(str)
+        df.to_excel(writer, sheet_name = name_df)
+
 #------------------------------------------------------------------------------------------------#
 # SIDEBAR
 sidebar = st.sidebar
@@ -87,13 +96,17 @@ costos_fijos_314 = worksheets_a_dataframe(nombre_libro, hoja_2)
 hoja_3 = "1_Precios"
 precios_314 = worksheets_a_dataframe(nombre_libro, hoja_3)
 
-# Membresías proyectadas
-hoja_4 = "1_MembresíasProyectadas"
-membresias_proyectadas_314 = worksheets_a_dataframe(nombre_libro, hoja_4)
+# Membresías proyectadas a tres meses
+hoja_4 = "1_MembresíasProyectadas_3"
+membresias_proyectadas_3_314 = worksheets_a_dataframe(nombre_libro, hoja_4)
+
+# Membresías proyectadas a seis meses
+hoja_5 = "1_MembresíasProyectadas_6"
+membresias_proyectadas_6_314 = worksheets_a_dataframe(nombre_libro, hoja_5)
 
 # Tasas
-hoja_5 = "1_Tasas"
-tasas_314 = worksheets_a_dataframe(nombre_libro, hoja_5)
+hoja_6 = "1_Tasas"
+tasas_314 = worksheets_a_dataframe(nombre_libro, hoja_6)
 
 #------------------------------------------------------------------------------------------------#
 
@@ -106,21 +119,20 @@ if option_selected == "Planeación financiera":
     sidebar.markdown("<h1 style='text-align: left; color: #195419; font-size: 1.5rem;'>Planeación financiera</h1>", unsafe_allow_html=True)
     sidebar.header("`Métricas y escenarios`")
 
+    # Información de la Página
+    expansion = st.expander ("Acerca de")
+    expansion.markdown("""* *Planeación financiera* Aquí se abordan los componentes principales de la aplicación, los que permiten modificar las variables pertinentes de la organización. Entre las que podemos encontrar: Número de membresías, Cantidad de meses a mostrar, Tasa de interés, Precios, Porcentaje de comisiones y costos fijos. """)
     membresias = sidebar.multiselect("Membresías:", ["Básica","Black","Platino"], default=["Básica","Black","Platino"])
-    if ("Básica" in membresias) & ("Black" in membresias) & ("Platino" in membresias):
     
-    # CONFIGURACIÓN DE LA PÁGINA Y EL SIDEBAR
-        st.write(comisiones_314)
-        st.write(costos_fijos_314)
-        st.write(precios_314)
-        st.write(membresias_proyectadas_314)
-        st.write(tasas_314)
+    if ("Básica" in membresias) & ("Black" in membresias) & ("Platino" in membresias):
+
+        # CONFIGURACIÓN DE LA PÁGINA Y EL SIDEBAR
 
         col1, col2, col3 = st.columns(3)
         col1.metric("Membresías Básicas","65","+ 5")
         col2.metric("Membresías Black","35","+ 3")
         col3.metric("Membresías Platino","0","0")
-
+        style_metric_cards(border_left_color = "#27AE60")
         
         st.write("<h1 style='text-align: center; font-size: 1.6rem;'>Inputs de planeación financiera</h1>", unsafe_allow_html=True)
         st.write(" --- ")
@@ -132,7 +144,7 @@ if option_selected == "Planeación financiera":
        
         # ba = Membresía básica, bl = Membresía black, pl = Membresía platino
         # m1 = Mes 1, m2 = Mes 2, m3 = Mes 3
-        if meses == 3:
+        if meses == 6:
 
             # FECHAS
             def month_name(date):
@@ -164,28 +176,46 @@ if option_selected == "Planeación financiera":
             
             # Mes 1
             colum1.markdown("<h1 style='text-align: right; font-size: 1.5rem;'>Mes 1</h1>", unsafe_allow_html=True)
-            ba_m1 = colum2.number_input(label = "a", label_visibility = "hidden", value = 70, min_value = 0, max_value = 10000, step = 1, key = "ba_m1")
-            bl_m1 = colum3.number_input(label = "a", label_visibility = "hidden", value = 40, min_value = 0, max_value = 10000, step = 1, key = "bl_m1")
-            pl_m1 = colum4.number_input(label = "a", label_visibility = "hidden", value = 5, min_value = 0, max_value = 10000, step = 1, key = "pl_m1")
+            ba_m1 = colum2.number_input(label = "a", label_visibility = "hidden", value = membresias_proyectadas_6_314.iloc[0,0], min_value = 0, max_value = 10000, step = 1, key = "ba_m1")
+            bl_m1 = colum3.number_input(label = "a", label_visibility = "hidden", value = membresias_proyectadas_6_314.iloc[0,1], min_value = 0, max_value = 10000, step = 1, key = "bl_m1")
+            pl_m1 = colum4.number_input(label = "a", label_visibility = "hidden", value = membresias_proyectadas_6_314.iloc[0,2], min_value = 0, max_value = 10000, step = 1, key = "pl_m1")
             colum1.markdown("")
             # Mes 2
             colum1.markdown("<h1 style='text-align: right; font-size: 1.5rem;'>Mes 2</h1>", unsafe_allow_html=True)
-            ba_m2 = colum2.number_input(label = "a", label_visibility = "hidden", value = 74, min_value = 0, max_value = 10000, step = 1, key = "ba_m2")
-            bl_m2 = colum3.number_input(label = "a", label_visibility = "hidden", value = 41, min_value = 0, max_value = 10000, step = 1, key = "bl_m2")
-            pl_m2 = colum4.number_input(label = "a", label_visibility = "hidden", value = 8, min_value = 0, max_value = 10000, step = 1, key = "pl_m2")
+            ba_m2 = colum2.number_input(label = "a", label_visibility = "hidden", value = membresias_proyectadas_6_314.iloc[1,0], min_value = 0, max_value = 10000, step = 1, key = "ba_m2")
+            bl_m2 = colum3.number_input(label = "a", label_visibility = "hidden", value = membresias_proyectadas_6_314.iloc[1,1], min_value = 0, max_value = 10000, step = 1, key = "bl_m2")
+            pl_m2 = colum4.number_input(label = "a", label_visibility = "hidden", value = membresias_proyectadas_6_314.iloc[1,2], min_value = 0, max_value = 10000, step = 1, key = "pl_m2")
             colum1.markdown("")
             # Mes 3
             colum1.markdown("<h1 style='text-align: right; font-size: 1.5rem;'>Mes 3</h1>", unsafe_allow_html=True)
-            ba_m3 = colum2.number_input(label = "a", label_visibility = "hidden", value = 80, min_value = 0, max_value = 10000, step = 1, key = "ba_m3")
-            bl_m3 = colum3.number_input(label = "a", label_visibility = "hidden", value = 50, min_value = 0, max_value = 10000, step = 1, key = "bl_m3")
-            pl_m3 = colum4.number_input(label = "a", label_visibility = "hidden", value = 10, min_value = 0, max_value = 10000, step = 1, key = "pl_m3")
+            ba_m3 = colum2.number_input(label = "a", label_visibility = "hidden", value = membresias_proyectadas_6_314.iloc[2,0], min_value = 0, max_value = 10000, step = 1, key = "ba_m3")
+            bl_m3 = colum3.number_input(label = "a", label_visibility = "hidden", value = membresias_proyectadas_6_314.iloc[2,1], min_value = 0, max_value = 10000, step = 1, key = "bl_m3")
+            pl_m3 = colum4.number_input(label = "a", label_visibility = "hidden", value = membresias_proyectadas_6_314.iloc[2,2], min_value = 0, max_value = 10000, step = 1, key = "pl_m3")
+            colum1.markdown("")
+            # Mes 4
+            colum1.markdown("<h1 style='text-align: right; font-size: 1.5rem;'>Mes 4</h1>", unsafe_allow_html=True)
+            ba_m4 = colum2.number_input(label = "a", label_visibility = "hidden", value = membresias_proyectadas_6_314.iloc[3,0], min_value = 0, max_value = 10000, step = 1, key = "ba_m4")
+            bl_m4 = colum3.number_input(label = "a", label_visibility = "hidden", value = membresias_proyectadas_6_314.iloc[3,1], min_value = 0, max_value = 10000, step = 1, key = "bl_m4")
+            pl_m4 = colum4.number_input(label = "a", label_visibility = "hidden", value = membresias_proyectadas_6_314.iloc[3,2], min_value = 0, max_value = 10000, step = 1, key = "pl_m4")
+            colum1.markdown("")
+            # Mes 5
+            colum1.markdown("<h1 style='text-align: right; font-size: 1.5rem;'>Mes 5</h1>", unsafe_allow_html=True)
+            ba_m5 = colum2.number_input(label = "a", label_visibility = "hidden", value = membresias_proyectadas_6_314.iloc[4,0], min_value = 0, max_value = 10000, step = 1, key = "ba_m5")
+            bl_m5 = colum3.number_input(label = "a", label_visibility = "hidden", value = membresias_proyectadas_6_314.iloc[4,1], min_value = 0, max_value = 10000, step = 1, key = "bl_m5")
+            pl_m5 = colum4.number_input(label = "a", label_visibility = "hidden", value = membresias_proyectadas_6_314.iloc[4,2], min_value = 0, max_value = 10000, step = 1, key = "pl_m5")
+            colum1.markdown("")
+            # Mes 6
+            colum1.markdown("<h1 style='text-align: right; font-size: 1.5rem;'>Mes 6</h1>", unsafe_allow_html=True)
+            ba_m6 = colum2.number_input(label = "a", label_visibility = "hidden", value = membresias_proyectadas_6_314.iloc[5,0], min_value = 0, max_value = 10000, step = 1, key = "ba_m6")
+            bl_m6 = colum3.number_input(label = "a", label_visibility = "hidden", value = membresias_proyectadas_6_314.iloc[5,1], min_value = 0, max_value = 10000, step = 1, key = "bl_m6")
+            pl_m6 = colum4.number_input(label = "a", label_visibility = "hidden", value = membresias_proyectadas_6_314.iloc[5,2], min_value = 0, max_value = 10000, step = 1, key = "pl_m6")
             colum1.markdown("")
 
-            m1 = [ba_m1, ba_m2, ba_m3]
-            m2 = [bl_m1, bl_m2, bl_m3]
-            m3 = [pl_m1, pl_m2, pl_m3]
-            df_membresias = pd.DataFrame(list(zip(m1, m2, m3)), columns = ['Básica','Black','Platino'])
-            st.write(df_membresias)
+            m1 = [ba_m1, ba_m2, ba_m3, ba_m4, ba_m5, ba_m6]
+            m2 = [bl_m1, bl_m2, bl_m3, bl_m4, bl_m5, bl_m6]
+            m3 = [pl_m1, pl_m2, pl_m3, pl_m4, pl_m5, pl_m6]
+            df_membresias_actualizadas = pd.DataFrame(list(zip(m1, m2, m3)), columns = ['Básica','Black','Platino'])
+            #st.write(df_membresias_actualizadas)
             st.write(" --- ")
 
             # TASA DE INTERÉS (INFLACIÓN E IMPUESTOS)
@@ -194,12 +224,16 @@ if option_selected == "Planeación financiera":
             
             colum1, colum2= st.columns((1,3))
             colum1.markdown("<h1 style='text-align: right; font-size: 1.2rem;'>Tasa de inflación</h1>", unsafe_allow_html=True)
-            tasa_inflacion = colum2.slider(label = "a", label_visibility = "hidden", value = 6.85, min_value = 0.0, max_value = 100.0, step = 1.0, key = "tasa_inflacion")
+            tasa_inflacion = colum2.slider(label = "a", label_visibility = "hidden", value = float(tasas_314.iloc[0,0]), min_value = 0.00, max_value = 100.0, step = 1.00, key = "tasa_inflacion")
             colum1.markdown(" ")
             colum1.markdown(" ")
             colum1.markdown(" ")
             colum1.markdown("<h1 style='text-align: right; font-size: 1.2rem;'>Tasa de impuestos</h1>", unsafe_allow_html=True)
-            tasa_impuestos = colum2.slider(label = "a", label_visibility = "hidden", value = 15.0, min_value = 0.0, max_value = 100.0, step = 1.0, key = "tasa_impuestos")
+            tasa_impuestos = colum2.slider(label = "a", label_visibility = "hidden", value = float(tasas_314.iloc[1,0]), min_value = 0.00, max_value = 100.00, step = 1.00, key = "tasa_impuestos")
+
+            t1 = [tasa_inflacion, tasa_impuestos]
+            df_tasas_actualizadas = pd.DataFrame(list(zip(t1)), columns = ['Valor'])
+            #st.write(df_tasas_actualizadas)
             st.write(" --- ")
 
             # PRECIOS DE MEMBRESÍAS
@@ -207,74 +241,71 @@ if option_selected == "Planeación financiera":
             columna1.write("<h1 style='text-align: center; font-size: 1.5rem;'>Precios</h1>", unsafe_allow_html=True)
             colum1, colum2, colum3, colum4 = st.columns((1,1,1,1))
             colum1.markdown("<h1 style='text-align: right; font-size: 1.2rem;'>Precios por membresía</h1>", unsafe_allow_html=True)
-            ba_precio = colum2.number_input(label = "Membresía básica: ", label_visibility = "visible", value = 199.87, min_value = 0.0, max_value = 1000.0, step = 1.0, key = "ba_precio")
-            bl_precio = colum3.number_input(label = "Membresía black: ", label_visibility = "visible", value = 304.70, min_value = 0.0, max_value = 1000.0, step = 1.0, key = "bl_precio")
-            pl_precio = colum4.number_input(label = "Membresía platino: ", label_visibility = "visible", value = 487.15, min_value = 0.0, max_value = 1000.0, step = 1.0, key = "pl_precio")
+            ba_precios = colum2.number_input(label = "Membresía básica: ", label_visibility = "visible", value = float(precios_314.iloc[0,0]), min_value = 0.0, max_value = 1000.0, step = 1.0, key = "ba_precio")
+            bl_precios = colum3.number_input(label = "Membresía black: ", label_visibility = "visible", value = float(precios_314.iloc[0,1]), min_value = 0.0, max_value = 1000.0, step = 1.0, key = "bl_precio")
+            pl_precios = colum4.number_input(label = "Membresía platino: ", label_visibility = "visible", value = float(precios_314.iloc[0,2]), min_value = 0.0, max_value = 1000.0, step = 1.0, key = "pl_precio")
             
-            df_precios = pd.DataFrame()                
-            df_precios["Básica"] = [ba_precio]
-            df_precios["Black"] = [bl_precio] 
-            df_precios["Platino"] = [pl_precio]
+            df_precios_actualizados = pd.DataFrame()                
+            df_precios_actualizados["Básica"] = [ba_precios]
+            df_precios_actualizados["Black"] = [bl_precios] 
+            df_precios_actualizados["Platino"] = [pl_precios]
 
             # INGRESOS MENSUALES EN EL ESCENARIO MÁS PROBABLE
 
-            ba_ingresos = df_membresias["Básica"]*ba_precio
-            bl_ingresos = df_membresias["Black"]*bl_precio
-            pl_ingresos = df_membresias["Platino"]*pl_precio
-            df_ingresos = pd.DataFrame(list(zip(ba_ingresos, bl_ingresos, pl_ingresos)), columns = ['Básica','Black','Platino'])
-            st.write(df_ingresos)
+            ba_ingresos_actualizados = df_membresias_actualizadas["Básica"]*ba_precios
+            bl_ingresos_actualizados = df_membresias_actualizadas["Black"]*bl_precios
+            pl_ingresos_actualizados = df_membresias_actualizadas["Platino"]*pl_precios
+            df_ingresos_actualizados = pd.DataFrame(list(zip(ba_ingresos_actualizados, bl_ingresos_actualizados, pl_ingresos_actualizados)), columns = ['Básica','Black','Platino'])
+            #st.write(df_ingresos_actualizados)
             st.write(" --- ")
             
             # PORCENTAJES DE COMISIONES
             columna1, columna2 = st.columns((2,3))
             columna1.write("<h1 style='text-align: center; font-size: 1.5rem;'>Porcentajes de comisiones:</h1>", unsafe_allow_html=True)
-            
             colum1, colum2, colum3, colum4 = st.columns((1,1,1,1))
-            
             colum1.markdown("")
             colum1.markdown("")
             colum1.markdown("")
-            
-            # COMISIÓN DEL VENDEDOR
+            #--- Comisión del vendedor ---
             colum1.markdown("<h1 style='text-align: right; font-size: 1.2rem;'>Comisión del vendedor:</h1>", unsafe_allow_html=True)
-            ba_com_ven = colum2.number_input(label = "a", label_visibility = "hidden", value = 13.0, min_value = 0.0, max_value = 100.0, step = 0.1, key = "ba_com_ven")
-            bl_com_ven = colum3.number_input(label = "a", label_visibility = "hidden", value = 15.0, min_value = 0.0, max_value = 100.0, step = 0.1, key = "bl_com_vem")
-            pl_com_ven = colum4.number_input(label = "a", label_visibility = "hidden", value = 15.0, min_value = 0.0, max_value = 100.0, step = 0.1, key = "pl_com_ven")
+            ba_com_ven = colum2.number_input(label = "a", label_visibility = "hidden", value = float(comisiones_314.iloc[0,0]), min_value = 0.0, max_value = 100.0, step = 0.1, key = "ba_com_ven")
+            bl_com_ven = colum3.number_input(label = "a", label_visibility = "hidden", value = float(comisiones_314.iloc[0,1]), min_value = 0.0, max_value = 100.0, step = 0.1, key = "bl_com_vem")
+            pl_com_ven = colum4.number_input(label = "a", label_visibility = "hidden", value = float(comisiones_314.iloc[0,2]), min_value = 0.0, max_value = 100.0, step = 0.1, key = "pl_com_ven")
             colum1.markdown("")
-            # COMISIÓN DE REFERENCIA
+            #--- Comisión de referencia ---
             colum1.markdown("<h1 style='text-align: right; font-size: 1.2rem;'>Comisión de referencia</h1>", unsafe_allow_html=True)
-            ba_com_ref = colum2.number_input(label = "a", label_visibility = "hidden", value = 3.0, min_value = 0.0, max_value = 100.0, step = 0.1, key = "ba_com_ref")
-            bl_com_ref = colum3.number_input(label = "a", label_visibility = "hidden", value = 5.0, min_value = 0.0, max_value = 100.0, step = 0.1, key = "bl_com_ref")
-            pl_com_ref = colum4.number_input(label = "a", label_visibility = "hidden", value = 5.0, min_value = 0.0, max_value = 100.0, step = 0.1, key = "pl_com_ref")
+            ba_com_ref = colum2.number_input(label = "a", label_visibility = "hidden", value = float(comisiones_314.iloc[1,0]), min_value = 0.0, max_value = 100.0, step = 0.1, key = "ba_com_ref")
+            bl_com_ref = colum3.number_input(label = "a", label_visibility = "hidden", value = float(comisiones_314.iloc[1,1]), min_value = 0.0, max_value = 100.0, step = 0.1, key = "bl_com_ref")
+            pl_com_ref = colum4.number_input(label = "a", label_visibility = "hidden", value = float(comisiones_314.iloc[1,2]), min_value = 0.0, max_value = 100.0, step = 0.1, key = "pl_com_ref")
             colum1.markdown("")
-            # COMISIÓN FINANCIERA
+            #--- Comisión financiera ---
             colum1.markdown("<h1 style='text-align: right; font-size: 1.2rem;'>Comisión financiera</h1>", unsafe_allow_html=True)
-            ba_com_fin = colum2.number_input(label = "a", label_visibility = "hidden", value = 15.0, min_value = 0.0, max_value = 100.0, step = 0.1, key = "ba_com_fin")
-            bl_com_fin = colum3.number_input(label = "a", label_visibility = "hidden", value = 15.0, min_value = 0.0, max_value = 100.0, step = 0.1, key = "bl_com_fin")
-            pl_com_fin = colum4.number_input(label = "a", label_visibility = "hidden", value = 15.0, min_value = 0.0, max_value = 100.0, step = 0.1, key = "pl_com_fin")
+            ba_com_fin = colum2.number_input(label = "a", label_visibility = "hidden", value = float(comisiones_314.iloc[2,0]), min_value = 0.0, max_value = 100.0, step = 0.1, key = "ba_com_fin")
+            bl_com_fin = colum3.number_input(label = "a", label_visibility = "hidden", value = float(comisiones_314.iloc[2,1]), min_value = 0.0, max_value = 100.0, step = 0.1, key = "bl_com_fin")
+            pl_com_fin = colum4.number_input(label = "a", label_visibility = "hidden", value = float(comisiones_314.iloc[2,2]), min_value = 0.0, max_value = 100.0, step = 0.1, key = "pl_com_fin")
             colum1.markdown("")
-            # COMISIÓN DE MARKETING
+            #--- Comisión de marketing ---
             colum1.markdown("<h1 style='text-align: right; font-size: 1.2rem;'>Comisión de marketing</h1>", unsafe_allow_html=True)
-            ba_com_mkt = colum2.number_input(label = "a", label_visibility = "hidden", value = 1.0, min_value = 0.0, max_value = 100.0, step = 0.1, key = "ba_com_mkt")
-            bl_com_mkt = colum3.number_input(label = "a", label_visibility = "hidden", value = 3.0, min_value = 0.0, max_value = 100.0, step = 0.1, key = "bl_com_mkt")
-            pl_com_mkt = colum4.number_input(label = "a", label_visibility = "hidden", value = 5.0, min_value = 0.0, max_value = 100.0, step = 0.1, key = "pl_com_mkt")
+            ba_com_mkt = colum2.number_input(label = "a", label_visibility = "hidden", value = float(comisiones_314.iloc[3,0]), min_value = 0.0, max_value = 100.0, step = 0.1, key = "ba_com_mkt")
+            bl_com_mkt = colum3.number_input(label = "a", label_visibility = "hidden", value = float(comisiones_314.iloc[3,1]), min_value = 0.0, max_value = 100.0, step = 0.1, key = "bl_com_mkt")
+            pl_com_mkt = colum4.number_input(label = "a", label_visibility = "hidden", value = float(comisiones_314.iloc[3,2]), min_value = 0.0, max_value = 100.0, step = 0.1, key = "pl_com_mkt")
             colum1.markdown("")
 
             l1_1 = [ba_com_ven, ba_com_ref, ba_com_fin, ba_com_mkt]
             l2_1 = [bl_com_ven, bl_com_ref, bl_com_fin, bl_com_mkt]
             l3_1 = [pl_com_ven, pl_com_ref, pl_com_fin, pl_com_mkt]
-            df_porc_comisiones = pd.DataFrame(list(zip(l1_1, l2_1, l3_1)), columns = ['Básica','Black','Platino'])
+            df_porc_comisiones_actualizadas = pd.DataFrame(list(zip(l1_1, l2_1, l3_1)), columns = ['Básica','Black','Platino'])
 
-            l1_2 = list(map(lambda x: x*ba_precio/100, l1_1))
-            l2_2 = list(map(lambda x: x*bl_precio/100, l2_1))
-            l3_2 = list(map(lambda x: x*pl_precio/100, l3_1))
+            l1_2 = list(map(lambda x: x*ba_precios/100, l1_1))
+            l2_2 = list(map(lambda x: x*bl_precios/100, l2_1))
+            l3_2 = list(map(lambda x: x*pl_precios/100, l3_1))
             
-            df_comisiones = pd.DataFrame(list(zip(l1_2, l2_2, l3_2)), columns = ['Básica','Black','Platino'])
-            df_comisiones_totales = pd.DataFrame()                
-            df_comisiones_totales["Básica"] = [df_comisiones["Básica"].sum()]
-            df_comisiones_totales["Black"] = [df_comisiones["Black"].sum()] 
-            df_comisiones_totales["Platino"] = [df_comisiones["Platino"].sum()]
-            st.write(df_comisiones_totales)
+            df_comisiones_actualizadas = pd.DataFrame(list(zip(l1_2, l2_2, l3_2)), columns = ['Básica','Black','Platino'])
+            df_comisiones_totales_actualizadas = pd.DataFrame()                
+            df_comisiones_totales_actualizadas["Básica"] = [df_comisiones_actualizadas["Básica"].sum()]
+            df_comisiones_totales_actualizadas["Black"] = [df_comisiones_actualizadas["Black"].sum()] 
+            df_comisiones_totales_actualizadas["Platino"] = [df_comisiones_actualizadas["Platino"].sum()]
+            #st.write(df_comisiones_totales_actualizadas)
             
             # COSTOS FIJOS
             st.write(" --- ")
@@ -289,21 +320,8 @@ if option_selected == "Planeación financiera":
             tipo_analisis = columna2.radio(" ",("Costos fijos totales por membresía","Desglose de costos fijos por membresía"), horizontal=True)
 
             colum1, colum2, colum3, colum4 = st.columns((1,1,1,1))
-            
-            if tipo_analisis == "Costos fijos totales por membresía":
-                colum1.markdown("<h1 style='text-align: right; font-size: 1.2rem;'>Costos fijos totales por membresía</h1>", unsafe_allow_html=True)
-                ba_costos_fijos_totales = colum2.number_input(label = "Membresía básica: ", label_visibility = "visible", value = 106.0, min_value = 0.0, max_value = 1000.0, step = 1.0, key = "ba_costos_fijos_totales")
-                bl_costos_fijos_totales = colum3.number_input(label = "Membresía black: ", label_visibility = "visible", value = 109.0, min_value = 0.0, max_value = 1000.0, step = 1.0, key = "bl_costos_fijos_totales")
-                pl_costos_fijos_totales = colum4.number_input(label = "Membresía platino: ", label_visibility = "visible", value = 167.25, min_value = 0.0, max_value = 1000.0, step = 1.0, key = "pl_costos_fijos_totales")
-                
-                l1 = [ba_costos_fijos_totales]
-                l2 = [bl_costos_fijos_totales]
-                l3 = [pl_costos_fijos_totales]
-                df_costos_fijos_totales = pd.DataFrame(list(zip(l1, l2, l3)), columns = ['Básica','Black','Platino'])
-                
-                st.write(" --- ")
 
-            elif tipo_analisis == "Desglose de costos fijos por membresía":
+            if tipo_analisis == "Desglose de costos fijos por membresía":
 
                 columna2.markdown(" ")
                 columna2.markdown(" ")
@@ -312,113 +330,129 @@ if option_selected == "Planeación financiera":
 
                 # Call center / oficinas
                 colum1.markdown("<h1 style='text-align: right; font-size: 1.2rem;'>Call center / oficinas:</h1>", unsafe_allow_html=True)
-                ba_costo_1 = colum2.number_input(label = "a", label_visibility = "hidden", value = 18.0, min_value = 0.0, max_value = 10000.0, step = 1.0, key = "ba_costo_1")
-                bl_costo_1 = colum3.number_input(label = "a", label_visibility = "hidden", value = 21.0, min_value = 0.0, max_value = 10000.0, step = 1.0, key = "bl_costo_1")
-                pl_costo_1 = colum4.number_input(label = "a", label_visibility = "hidden", value = 25.0, min_value = 0.0, max_value = 10000.0, step = 1.0, key = "pl_costo_1")
+                ba_costo_1 = colum2.number_input(label = "a", label_visibility = "hidden", value = float(costos_fijos_314.iloc[0,0]), min_value = 0.0, max_value = 10000.0, step = 1.0, key = "ba_costo_1")
+                bl_costo_1 = colum3.number_input(label = "a", label_visibility = "hidden", value = float(costos_fijos_314.iloc[0,1]), min_value = 0.0, max_value = 10000.0, step = 1.0, key = "bl_costo_1")
+                pl_costo_1 = colum4.number_input(label = "a", label_visibility = "hidden", value = float(costos_fijos_314.iloc[0,2]), min_value = 0.0, max_value = 10000.0, step = 1.0, key = "pl_costo_1")
                 colum1.markdown(" ")
                 colum1.markdown(" ")
                 
                 # Medicina general
                 colum1.markdown("<h1 style='text-align: right; font-size: 1.2rem;'>Medicina general:</h1>", unsafe_allow_html=True)
-                ba_costo_2 = colum2.number_input(label = "a", label_visibility = "hidden", value = 25.0, min_value = 0.0, max_value = 10000.0, step = 1.0, key = "ba_costo_2")
-                bl_costo_2 = colum3.number_input(label = "a", label_visibility = "hidden", value = 25.0, min_value = 0.0, max_value = 10000.0, step = 1.0, key = "bl_costo_2")
-                pl_costo_2 = colum4.number_input(label = "a", label_visibility = "hidden", value = 25.0, min_value = 0.0, max_value = 10000.0, step = 1.0, key = "pl_costo_2")
+                ba_costo_2 = colum2.number_input(label = "a", label_visibility = "hidden", value = float(costos_fijos_314.iloc[1,0]), min_value = 0.0, max_value = 10000.0, step = 1.0, key = "ba_costo_2")
+                bl_costo_2 = colum3.number_input(label = "a", label_visibility = "hidden", value = float(costos_fijos_314.iloc[1,1]), min_value = 0.0, max_value = 10000.0, step = 1.0, key = "bl_costo_2")
+                pl_costo_2 = colum4.number_input(label = "a", label_visibility = "hidden", value = float(costos_fijos_314.iloc[1,2]), min_value = 0.0, max_value = 10000.0, step = 1.0, key = "pl_costo_2")
                 colum1.markdown(" ")
                 colum1.markdown(" ")
                 
                 # Nutrición
                 colum1.markdown("<h1 style='text-align: right; font-size: 1.2rem;'>Nutrición:</h1>", unsafe_allow_html=True)
-                ba_costo_3 = colum2.number_input(label = "a", label_visibility = "hidden", value = 18.0, min_value = 0.0, max_value = 10000.0, step = 1.0, key = "ba_costo_3")
-                bl_costo_3 = colum3.number_input(label = "a", label_visibility = "hidden", value = 18.0, min_value = 0.0, max_value = 10000.0, step = 1.0, key = "bl_costo_3")
-                pl_costo_3 = colum4.number_input(label = "a", label_visibility = "hidden", value = 18.0, min_value = 0.0, max_value = 10000.0, step = 1.0, key = "pl_costo_3")
+                ba_costo_3 = colum2.number_input(label = "a", label_visibility = "hidden", value = float(costos_fijos_314.iloc[2,0]), min_value = 0.0, max_value = 10000.0, step = 1.0, key = "ba_costo_3")
+                bl_costo_3 = colum3.number_input(label = "a", label_visibility = "hidden", value = float(costos_fijos_314.iloc[2,1]), min_value = 0.0, max_value = 10000.0, step = 1.0, key = "bl_costo_3")
+                pl_costo_3 = colum4.number_input(label = "a", label_visibility = "hidden", value = float(costos_fijos_314.iloc[2,2]), min_value = 0.0, max_value = 10000.0, step = 1.0, key = "pl_costo_3")
                 colum1.markdown(" ")
                 colum1.markdown(" ")
 
                 # Psicología
                 colum1.markdown("<h1 style='text-align: right; font-size: 1.2rem;'>Psicología:</h1>", unsafe_allow_html=True)
-                ba_costo_4 = colum2.number_input(label = "a", label_visibility = "hidden", value = 22.0, min_value = 0.0, max_value = 10000.0, step = 1.0, key = "ba_costo_4")
-                bl_costo_4 = colum3.number_input(label = "a", label_visibility = "hidden", value = 22.0, min_value = 0.0, max_value = 10000.0, step = 1.0, key = "bl_costo_4")
-                pl_costo_4 = colum4.number_input(label = "a", label_visibility = "hidden", value = 22.0, min_value = 0.0, max_value = 10000.0, step = 1.0, key = "pl_costo_4")
+                ba_costo_4 = colum2.number_input(label = "a", label_visibility = "hidden", value = float(costos_fijos_314.iloc[3,0]), min_value = 0.0, max_value = 10000.0, step = 1.0, key = "ba_costo_4")
+                bl_costo_4 = colum3.number_input(label = "a", label_visibility = "hidden", value = float(costos_fijos_314.iloc[3,1]), min_value = 0.0, max_value = 10000.0, step = 1.0, key = "bl_costo_4")
+                pl_costo_4 = colum4.number_input(label = "a", label_visibility = "hidden", value = float(costos_fijos_314.iloc[3,2]), min_value = 0.0, max_value = 10000.0, step = 1.0, key = "pl_costo_4")
                 colum1.markdown(" ")
                 colum1.markdown(" ")
 
                 # Asistencias y seguros básicos
                 colum1.markdown("<h1 style='text-align: right; font-size: 1.2rem;'>Asistencias y seguros básicos:</h1>", unsafe_allow_html=True)
-                ba_costo_5 = colum2.number_input(label = "a", label_visibility = "hidden", value = 15.0, min_value = 0.0, max_value = 10000.0, step = 1.0, key = "ba_costo_5")
-                bl_costo_5 = colum3.number_input(label = "a", label_visibility = "hidden", value = 15.0, min_value = 0.0, max_value = 10000.0, step = 1.0, key = "bl_costo_5")
-                pl_costo_5 = colum4.number_input(label = "a", label_visibility = "hidden", value = 15.0, min_value = 0.0, max_value = 10000.0, step = 1.0, key = "pl_costo_5")
+                ba_costo_5 = colum2.number_input(label = "a", label_visibility = "hidden", value = float(costos_fijos_314.iloc[4,0]), min_value = 0.0, max_value = 10000.0, step = 1.0, key = "ba_costo_5")
+                bl_costo_5 = colum3.number_input(label = "a", label_visibility = "hidden", value = float(costos_fijos_314.iloc[4,1]), min_value = 0.0, max_value = 10000.0, step = 1.0, key = "bl_costo_5")
+                pl_costo_5 = colum4.number_input(label = "a", label_visibility = "hidden", value = float(costos_fijos_314.iloc[4,2]), min_value = 0.0, max_value = 10000.0, step = 1.0, key = "pl_costo_5")
                 colum1.markdown(" ")
                 colum1.markdown(" ")
 
                 # Plataforma de descuentos + Wellness
                 colum1.markdown("<h1 style='text-align: right; font-size: 1.2rem;'>Plataforma de descuentos + Wellness:</h1>", unsafe_allow_html=True)
-                ba_costo_6 = colum2.number_input(label = "a", label_visibility = "hidden", value = 8.0, min_value = 0.0, max_value = 10000.0, step = 1.0, key = "ba_costo_6")
-                bl_costo_6 = colum3.number_input(label = "a", label_visibility = "hidden", value = 8.0, min_value = 0.0, max_value = 10000.0, step = 1.0, key = "bl_costo_6")
-                pl_costo_6 = colum4.number_input(label = "a", label_visibility = "hidden", value = 8.0, min_value = 0.0, max_value = 10000.0, step = 1.0, key = "pl_costo_6")
+                ba_costo_6 = colum2.number_input(label = "a", label_visibility = "hidden", value = float(costos_fijos_314.iloc[5,0]), min_value = 0.0, max_value = 10000.0, step = 1.0, key = "ba_costo_6")
+                bl_costo_6 = colum3.number_input(label = "a", label_visibility = "hidden", value = float(costos_fijos_314.iloc[5,1]), min_value = 0.0, max_value = 10000.0, step = 1.0, key = "bl_costo_6")
+                pl_costo_6 = colum4.number_input(label = "a", label_visibility = "hidden", value = float(costos_fijos_314.iloc[5,2]), min_value = 0.0, max_value = 10000.0, step = 1.0, key = "pl_costo_6")
                 colum1.markdown(" ")
                 colum1.markdown(" ")
 
                 # Segunda opinión médica + Farm + Telemedicina
                 colum1.markdown("<h1 style='text-align: right; font-size: 1.2rem;'>Segunda opinión médica + Farm + Telemedicina:</h1>", unsafe_allow_html=True)
-                ba_costo_7 = colum2.number_input(label = "a", label_visibility = "hidden", value = 0.0, disabled = True, min_value = 0.0, max_value = 10000.0, step = 1.0, key = "ba_costo_7")
-                bl_costo_7 = colum3.number_input(label = "a", label_visibility = "hidden", value = 0.0, disabled = True, min_value = 0.0, max_value = 10000.0, step = 1.0, key = "bl_costo_7")
-                pl_costo_7 = colum4.number_input(label = "a", label_visibility = "hidden", value = 39.0, disabled = False, min_value = 0.0, max_value = 10000.0, step = 1.0, key = "pl_costo_7")
+                ba_costo_7 = colum2.number_input(label = "a", label_visibility = "hidden", value = float(costos_fijos_314.iloc[6,0]), disabled = True, min_value = 0.0, max_value = 10000.0, step = 1.0, key = "ba_costo_7")
+                bl_costo_7 = colum3.number_input(label = "a", label_visibility = "hidden", value = float(costos_fijos_314.iloc[6,1]), disabled = True, min_value = 0.0, max_value = 10000.0, step = 1.0, key = "bl_costo_7")
+                pl_costo_7 = colum4.number_input(label = "a", label_visibility = "hidden", value = float(costos_fijos_314.iloc[6,2]), disabled = False, min_value = 0.0, max_value = 10000.0, step = 1.0, key = "pl_costo_7")
                 colum1.markdown(" ")
 
                 # Doce meses de sueldo por muerte accidental
                 colum1.markdown("<h1 style='text-align: right; font-size: 1.2rem;'>Asistencias y seguros básicos:</h1>", unsafe_allow_html=True)
-                ba_costo_8 = colum2.number_input(label = "a", label_visibility = "hidden", value = 0.0, disabled = True, min_value = 0.0, max_value = 10000.0, step = 1.0, key = "ba_costo_8")
-                bl_costo_8 = colum3.number_input(label = "a", label_visibility = "hidden", value = 0.0, disabled = True, min_value = 0.0, max_value = 10000.0, step = 1.0, key = "bl_costo_8")
-                pl_costo_8 = colum4.number_input(label = "a", label_visibility = "hidden", value = 15.25, disabled = False, min_value = 0.0, max_value = 10000.0, step = 1.0, key = "pl_costo_8")
+                ba_costo_8 = colum2.number_input(label = "a", label_visibility = "hidden", value = float(costos_fijos_314.iloc[7,0]), disabled = True, min_value = 0.0, max_value = 10000.0, step = 1.0, key = "ba_costo_8")
+                bl_costo_8 = colum3.number_input(label = "a", label_visibility = "hidden", value = float(costos_fijos_314.iloc[7,1]), disabled = True, min_value = 0.0, max_value = 10000.0, step = 1.0, key = "bl_costo_8")
+                pl_costo_8 = colum4.number_input(label = "a", label_visibility = "hidden", value = float(costos_fijos_314.iloc[7,2]), disabled = False, min_value = 0.0, max_value = 10000.0, step = 1.0, key = "pl_costo_8")
                 colum1.markdown(" ")
 
 
                 l1 = [ba_costo_1, ba_costo_2, ba_costo_3, ba_costo_4, ba_costo_5, ba_costo_6, ba_costo_7, ba_costo_8]
                 l2 = [bl_costo_1, bl_costo_2, bl_costo_3, bl_costo_4, bl_costo_5, bl_costo_6, bl_costo_7, bl_costo_8]
                 l3 = [pl_costo_1, pl_costo_2, pl_costo_3, pl_costo_4, pl_costo_5, pl_costo_6, pl_costo_7, pl_costo_8]
-                df_costos_fijos = pd.DataFrame(list(zip(l1, l2, l3)), columns = ['Básica','Black','Platino'])
+                df_costos_fijos_actualizados = pd.DataFrame(list(zip(l1, l2, l3)), columns = ['Básica','Black','Platino'])
                 
-                df_costos_fijos_totales = pd.DataFrame()                
-                df_costos_fijos_totales["Básica"] = [df_costos_fijos["Básica"].sum()]
-                df_costos_fijos_totales["Black"] = [df_costos_fijos["Black"].sum()] 
-                df_costos_fijos_totales["Platino"] = [df_costos_fijos["Platino"].sum()]
+                df_costos_fijos_totales_actualizados = pd.DataFrame()                
+                df_costos_fijos_totales_actualizados["Básica"] = [df_costos_fijos_actualizados["Básica"].sum()]
+                df_costos_fijos_totales_actualizados["Black"] = [df_costos_fijos_actualizados["Black"].sum()] 
+                df_costos_fijos_totales_actualizados["Platino"] = [df_costos_fijos_actualizados["Platino"].sum()]
+
+            elif tipo_analisis == "Costos fijos totales por membresía":
+                colum1.markdown("<h1 style='text-align: right; font-size: 1.2rem;'>Costos fijos totales por membresía</h1>", unsafe_allow_html=True)
+                ba_costos_fijos_totales_inicial = costos_fijos_314["Básica"].astype(float).sum()
+                bl_costos_fijos_totales_inicial = costos_fijos_314["Black"].astype(float).sum()
+                pl_costos_fijos_totales_inicial = costos_fijos_314["Platino"].astype(float).sum()
+                
+                ba_costos_fijos_totales_actualizados = colum2.number_input(label = "Membresía básica: ", label_visibility = "visible", value = 106.0, min_value = 0.0, max_value = 1000.0, step = 1.0, key = "ba_costos_fijos_totales")
+                bl_costos_fijos_totales_actualizados = colum3.number_input(label = "Membresía black: ", label_visibility = "visible", value = 109.0, min_value = 0.0, max_value = 1000.0, step = 1.0, key = "bl_costos_fijos_totales")
+                pl_costos_fijos_totales_actualizados = colum4.number_input(label = "Membresía platino: ", label_visibility = "visible", value = 167.25, min_value = 0.0, max_value = 1000.0, step = 1.0, key = "pl_costos_fijos_totales")
+                
+                l1 = [ba_costos_fijos_totales_actualizados]
+                l2 = [bl_costos_fijos_totales_actualizados]
+                l3 = [pl_costos_fijos_totales_actualizados]
+                df_costos_fijos_totales_actualizados = pd.DataFrame(list(zip(l1, l2, l3)), columns = ['Básica','Black','Platino'])
+                
+                st.write(" --- ")
 
             # Utilidades antes de impuestos
-            uadi_por_membresia = utilidad_antes_de_impuestos(df_precios, df_comisiones_totales, df_costos_fijos_totales)
-
-            ba_uadi = uadi_por_membresia["Básica"][0]*df_membresias["Básica"]
-            bl_uadi = uadi_por_membresia["Black"][0]*df_membresias["Black"]
-            pl_uadi = uadi_por_membresia["Platino"][0]*df_membresias["Platino"]
+            uadi_por_membresia = utilidad_antes_de_impuestos(df_precios_actualizados, df_comisiones_totales_actualizadas, df_costos_fijos_totales_actualizados)
+            ba_uadi = uadi_por_membresia["Básica"][0]*df_membresias_actualizadas["Básica"]
+            bl_uadi = uadi_por_membresia["Black"][0]*df_membresias_actualizadas["Black"]
+            pl_uadi = uadi_por_membresia["Platino"][0]*df_membresias_actualizadas["Platino"]
             df_uadi = pd.DataFrame(list(zip(ba_uadi, bl_uadi, pl_uadi)), columns = ['Básica','Black','Platino'])
             df_uadi_mes = df_uadi.sum(axis = 1)
             df_uadi_mes.rename(index={0:'Mes 1',1:'Mes 2',2:'Mes 3'}, inplace=True)
-            #columna1, columna2 = st.columns((2,3))
-            #columna1.write("<h1 style='text-align: center; font-size: 1.5rem;'>Utilidades antes de impuestos:</h1>", unsafe_allow_html=True)
-            #columna2.write(df_uadi_mes)
-            #st.write(" --- ")
 
             # Utilidades netas
-
             ba_un = df_uadi["Básica"]*(1-(tasa_impuestos/100))
             bl_un = df_uadi["Black"]*(1-(tasa_impuestos/100))
             pl_un = df_uadi["Platino"]*(1-(tasa_impuestos/100))
             df_un = pd.DataFrame(list(zip(ba_un, bl_un, pl_un)), columns = ['Básica','Black','Platino'])
             df_un_mes = df_un.sum(axis = 1)
-            
             df_un_mes.rename(index={0:'Mes 1',1:'Mes 2',2:'Mes 3'}, inplace=True)
-            #df_un_mes.rename(columns = {0:'Utilidades netas'}, inplace = True)
 
-            #columna1, columna2 = st.columns((2,3))
-            #columna1.write("<h1 style='text-align: center; font-size: 1.5rem;'>Utilidades netas:</h1>", unsafe_allow_html=True)
-            #columna2.write(df_un_mes)
-            #st.write(" --- ")
 
-        elif meses == 6:
+            col1, col2, col3, col4 = st.columns(4)  
+            resultado = col3.button("Guardar datos")
+            st.write(" --- ")
+            if resultado == True:
+                guardar_dataframes(nombre_libro, df_porc_comisiones_actualizadas, "1_Comisiones")
+                if tipo_analisis == "Desglose de costos fijos por membresía":
+                    guardar_dataframes(nombre_libro, df_costos_fijos_actualizados, "1_CostosFijos")
+                else:
+                    guardar_dataframes(nombre_libro, df_costos_fijos_totales_actualizados, "1_CostosFijosTotales")
+                guardar_dataframes(nombre_libro, df_precios_actualizados, "1_Precios")
+                guardar_dataframes(nombre_libro, df_membresias_actualizadas, "1_MembresíasProyectadas_6")
+                guardar_dataframes(nombre_libro, df_tasas_actualizadas, "1_Tasas")
+                resultado = False
+
+        elif meses == 3:
             st.write()
-        elif meses == 9:
-            st.write()
-        else:
-            st.write() 
+
 
     #-----------------------------------------------------------------------------------------------------------------------------#
     
@@ -428,6 +462,7 @@ if option_selected == "Planeación financiera":
         col1, col2 = st.columns(2)
         col1.metric("Membresías Básicas","65","+ 5")
         col2.metric("Membresías Black","35","+ 3")
+        style_metric_cards()
 
         
         st.write("<h1 style='text-align: center; font-size: 1.6rem;'>Inputs de planeación financiera</h1>", unsafe_allow_html=True)
@@ -468,14 +503,11 @@ if option_selected == "Planeación financiera":
 
             membresias_mes = [ba_m1 + bl_m1, ba_m1 + bl_m1, ba_m1 + bl_m1]
 
-        elif meses == 6:
+        elif meses == 3:
             st.write()
-        elif meses == 9:
-            st.write()
-        else:
-            st.write()    
+ 
 
-
+    # Pie de página
     Column1, Column2,Column3, Column4 = st.columns ((2,4,1,2))
     DocTour = Image.open("DocTour-cutout.png")
     Column4.markdown("")
@@ -484,20 +516,23 @@ if option_selected == "Planeación financiera":
     Column2.markdown("<h1 style='text-align: center; color: #195419; font-size: 0.8rem;'>AVISO LEGAL | POLÍTICAS DE PRIVACIDAD | AVISO DE PRIVACIDAD</h1>", unsafe_allow_html=True)
     Column2.markdown("<h1 style='text-align: center; color: #195419; font-size: 0.8rem;'>©CCADS CONSULTING | TODOS LOS DERECHOS RESERVADOS</h1>", unsafe_allow_html=True)
 
-
     CCA = Image.open("CCADS.jpeg")
     Column1.image(CCA, width=100) 
 
 #-----------------------------------------------------------------------------------------------------------------------------#
 elif option_selected == "Escenarios": 
+    #Información de la Página
+    expansion = st.expander ("Acerca de")
+    expansion.markdown("""* *Planeación financiera* Aquí se abordan los componentes principales de la aplicación, los que permiten modificar las variables pertinentes de la organización. Entre las que podemos encontrar: Número de membresías, Cantidad de meses a mostrar, Tasa de interés, Precios, Porcentaje de comisiones y costos fijos.""")
+
     porc_comisiones = pd.read_excel("BD_DocTour.xlsx", sheet_name="1_Comisiones", index_col=0)
     costos_fijos = pd.read_excel("BD_DocTour.xlsx", sheet_name="1_CostosFijos", index_col=0)
     precios = pd.read_excel("BD_DocTour.xlsx", sheet_name="1_Precios", index_col=0)
-    membresias_proyectadas = pd.read_excel("BD_DocTour.xlsx", sheet_name="1_MembresíasProyectadas", index_col=0)
+    membresias_proyectadas = pd.read_excel("BD_DocTour.xlsx", sheet_name="1_MembresíasProyectadas_6", index_col=0)
 
     #------ ESCENARIO MÁS PROBABLE ---------#
     st.write("<h1 style='text-align: center; font-size: 1.6rem;'>Número de membresías proyectadas</h1>", unsafe_allow_html=True)
-        #st.write(df_un)
+
     columna1, columna2 = st.columns((2,3))
     columna2.write(membresias_proyectadas)
     st.write(" ")
@@ -513,16 +548,13 @@ elif option_selected == "Escenarios":
     df_costos_fijos_1["Básica"] = [costos_fijos["Básica"].sum()]
     df_costos_fijos_1["Black"] = [costos_fijos["Black"].sum()] 
     df_costos_fijos_1["Platino"] = [costos_fijos["Platino"].sum()]
-    #st.write(df_costos_fijos_1["Básica"][0])
+
 
     # COSTOS FIJOS TOTALES EN EL ESCENARIO MÁS PROBABLE
     ba_costos_totales_1 = membresias_proyectadas["Básica"]*df_costos_fijos_1["Básica"][0]
     bl_costos_totales_1 = membresias_proyectadas["Black"]*df_costos_fijos_1["Black"][0]
     pl_costos_totales_1 = membresias_proyectadas["Platino"]*df_costos_fijos_1["Platino"][0]
     df_costos_totales_1 = pd.DataFrame(list(zip(ba_costos_totales_1, bl_costos_totales_1, pl_costos_totales_1)), columns = ['Básica','Black','Platino'])
-    #st.write(" COSTOS TOTALES ")
-    #st.write(df_costos_totales_1)
-    #st.write(" --- ")
 
     # INGRESOS MENSUALES EN EL ESCENARIO MÁS PROBABLE
     ba_ingresos_1 = membresias_proyectadas["Básica"]*precios["Básica"][0]
@@ -854,6 +886,10 @@ elif option_selected == "Escenarios":
     Column1.image(CCA, width=100)
 #-----------------------------------------------------------------------------------------------------------------------------#
 elif option_selected == "Indicadores": 
+
+    # Información de la Página
+    expansion = st.expander ("Acerca de")
+    expansion.markdown("""* *Planeación financiera* Aquí se abordan los componentes principales de la aplicación, los que permiten modificar las variables pertinentes de la organización. Entre las que podemos encontrar: Número de membresías, Cantidad de meses a mostrar, Tasa de interés, Precios, Porcentaje de comisiones y costos fijos.""")
     df_dash= pd.read_excel("BD_DocTour.xlsx",sheet_name="3_Membresías")   
       
     ab1, ab2 = st.columns((3,2))

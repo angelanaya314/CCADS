@@ -1,0 +1,9 @@
+
+# Dataframes
+df_membresias_actualizadas
+df_tasas_actualizadas
+df_precios_actualizados
+df_ingresos_actualizados
+df_porc_comisiones_actualizadas
+df_comisiones_actualizadas
+df_comisiones_totales_actualizadas

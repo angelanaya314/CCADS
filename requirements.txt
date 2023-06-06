@@ -1,6 +1,7 @@
 streamlit
 openpyxl
 streamlit-option-menu
+streamlit-extras
 altair
 pandas
 numpy
