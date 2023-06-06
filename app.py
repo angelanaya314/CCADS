@@ -7,26 +7,15 @@ import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
 import matplotlib.pyplot as plt
+from openpyxl import load_workbook
 from streamlit_option_menu import option_menu
 from datetime import datetime, date, timedelta
 from dateutil.relativedelta import relativedelta
 from PIL import Image
 
 #------------------------------------------------------------------------------------------------#
-# IMPORTACIÓN DE LA BASE DE DATOS
-df = pd.read_excel("BD_DocTour.xlsx")
-
-#------------------------------------------------------------------------------------------------#
+#------- Configuración de Streamlit ----------
 st.set_page_config(layout='wide', initial_sidebar_state='expanded')
-#This code helps to hide the main menu of Streamlit
-#hide_st_style = """
-#			<style>
-#			#MainMenu {visibility: hidden;}
-#			footer {visibility: hidden;}
-#			header {visibility: hidden;}
-#			</style>
-#			"""
-#st.markdown(hide_st_style, unsafe_allow_html=True)
 
 #------------------------------------------------------------------------------------------------#
 #------- Navigation Menu ----------
@@ -37,15 +26,25 @@ option_selected = option_menu(
 )
 #------------------------------------------------------------------------------------------------#
 #------- Caché to download DataFrame as CSV ----------
+df = pd.read_excel("BD_DocTour.xlsx")
 @st.cache
 def convert_df(df):
     return df.to_csv().encode('utf-8')
-#------------------------------------------------------------------------------------------------#
-# SIDEBAR
-sidebar = st.sidebar
 
 #------------------------------------------------------------------------------------------------#
 #FUNCIONES
+
+def worksheets_a_dataframe(nombre_libro, nombre_hoja):
+    wb = load_workbook(nombre_libro)
+    ws = wb[nombre_hoja]
+    data = ws.values
+    columnas_df = next(data)[0:]
+    df = pd.DataFrame(data, columns = columnas_df)
+    indices_df = df.iloc[:, 0]
+    df.set_index(indices_df, inplace = True)
+    df = df.iloc[:, 1:]
+    return df
+
 def utilidad_antes_de_impuestos(df_ingresos, df_comisiones_totales, df_costos_fijos_totales):
     uadi = pd.DataFrame()
     uadi["Básica"] = df_ingresos["Básica"] - df_comisiones_totales["Básica"] - df_costos_fijos_totales["Básica"]
@@ -67,6 +66,33 @@ def decremento_membresias(df_membresias, tasa_decremento):
     df_membresias_nuevas["Platino"] = df_membresias["Platino"]*(1 - (tasa_decremento/100))
     return df_membresias_nuevas
 
+#------------------------------------------------------------------------------------------------#
+# SIDEBAR
+sidebar = st.sidebar
+
+#------------------------------------------------------------------------------------------------#
+# IMPORTACIÓN DE LA BASE DE DATOS
+
+nombre_libro = "BD_DocTour.xlsx"
+
+# Comisiones
+hoja_1 = "1_Comisiones"
+comisiones_314 = worksheets_a_dataframe(nombre_libro, hoja_1)
+
+# Costos fijos
+hoja_2 = "1_CostosFijos"
+costos_fijos_314 = worksheets_a_dataframe(nombre_libro, hoja_2)
+
+# Precios
+hoja_3 = "1_Precios"
+precios_314 = worksheets_a_dataframe(nombre_libro, hoja_3)
+
+# Membresías proyectadas
+hoja_4 = "1_MembresíasProyectadas"
+membresias_proyectadas_314 = worksheets_a_dataframe(nombre_libro, hoja_4)
+
+#------------------------------------------------------------------------------------------------#
+
 if option_selected == "Planeación financiera":
 
     DocTour = Image.open("DocTour-cutout.png")
@@ -80,6 +106,11 @@ if option_selected == "Planeación financiera":
     if ("Básica" in membresias) & ("Black" in membresias) & ("Platino" in membresias):
     
     # CONFIGURACIÓN DE LA PÁGINA Y EL SIDEBAR
+        st.write(comisiones314)
+        st.write(costos_fijos_314)
+        st.write(precios_314)
+        st.write(membresias_proyectadas_314)
+
         col1, col2, col3 = st.columns(3)
         col1.metric("Membresías Básicas","65","+ 5")
         col2.metric("Membresías Black","35","+ 3")
