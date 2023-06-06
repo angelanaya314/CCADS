@@ -91,6 +91,10 @@ precios_314 = worksheets_a_dataframe(nombre_libro, hoja_3)
 hoja_4 = "1_MembresíasProyectadas"
 membresias_proyectadas_314 = worksheets_a_dataframe(nombre_libro, hoja_4)
 
+# Tasas
+hoja_5 = "1_Tasas"
+tasas_314 = worksheets_a_dataframe(nombre_libro, hoja_5)
+
 #------------------------------------------------------------------------------------------------#
 
 if option_selected == "Planeación financiera":
@@ -106,10 +110,11 @@ if option_selected == "Planeación financiera":
     if ("Básica" in membresias) & ("Black" in membresias) & ("Platino" in membresias):
     
     # CONFIGURACIÓN DE LA PÁGINA Y EL SIDEBAR
-        st.write(comisiones314)
+        st.write(comisiones_314)
         st.write(costos_fijos_314)
         st.write(precios_314)
         st.write(membresias_proyectadas_314)
+        st.write(tasas_314)
 
         col1, col2, col3 = st.columns(3)
         col1.metric("Membresías Básicas","65","+ 5")
@@ -123,7 +128,7 @@ if option_selected == "Planeación financiera":
         # MESES A PROYECTAR Y SOLICITUD DE VALORES
         columna1, columna2 = st.columns((2,3))
         columna1.write("<h1 style='text-align: center; font-size: 1.2rem;'>Meses a proyectar:</h1>", unsafe_allow_html=True)
-        meses = columna2.radio(" ",(3, 6, 9, 12), horizontal=True)
+        meses = columna2.radio(" ",(3, 6), horizontal=True)
        
         # ba = Membresía básica, bl = Membresía black, pl = Membresía platino
         # m1 = Mes 1, m2 = Mes 2, m3 = Mes 3
@@ -194,7 +199,7 @@ if option_selected == "Planeación financiera":
             colum1.markdown(" ")
             colum1.markdown(" ")
             colum1.markdown("<h1 style='text-align: right; font-size: 1.2rem;'>Tasa de impuestos</h1>", unsafe_allow_html=True)
-            tasa_impuestos = colum2.slider(label = "a", label_visibility = "hidden", value = 30.0, min_value = 0.0, max_value = 100.0, step = 1.0, key = "tasa_impuestos")
+            tasa_impuestos = colum2.slider(label = "a", label_visibility = "hidden", value = 15.0, min_value = 0.0, max_value = 100.0, step = 1.0, key = "tasa_impuestos")
             st.write(" --- ")
 
             # PRECIOS DE MEMBRESÍAS
