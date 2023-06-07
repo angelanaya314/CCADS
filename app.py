@@ -751,7 +751,7 @@ elif option_selected == "Escenarios":
         fig4_1.update_traces(line = dict(width = 4))
         columna3.write(fig4_1)
     else:
-        columna2.write(df_utilidad_neta_inflacion_mes_1)
+        columna2.write(df_utilidad_neta_inflacion_mes_2)
         fig4_2 = px.line(
             data_frame = df_utilidad_neta_inflacion_mes_2,
             color_discrete_map={"Utilidades netas mensuales":"#17A589"},
@@ -858,9 +858,9 @@ elif option_selected == "Escenarios":
         fig5.update_traces(line = dict(width = 4))
         columna3.write(fig5)
     else:
-        columna2.write(df_utilidad_neta_inflacion_mes_1)
+        columna2.write(df_utilidad_neta_inflacion_mes_3)
         fig5_2 = px.line(
-            data_frame = df_utilidad_neta_inflacion_mes_1,
+            data_frame = df_utilidad_neta_inflacion_mes_3,
             color_discrete_map={"Utilidades netas mensuales":"#17A589"},
             markers=True
         )
