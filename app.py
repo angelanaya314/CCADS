@@ -115,17 +115,21 @@ costos_fijos_totales = worksheets_a_dataframe(nombre_libro, hoja_3)
 hoja_4 = "1_Precios"
 precios = worksheets_a_dataframe(nombre_libro, hoja_4)
 
+# Membresías activas
+hoja_5 = "1_MembresíasActivas"
+membresias_activas = worksheets_a_dataframe(nombre_libro, hoja_5)
+
 # Membresías proyectadas a tres meses
-hoja_5 = "1_MembresíasProyectadas_3"
-membresias_proyectadas_3 = worksheets_a_dataframe(nombre_libro, hoja_5)
+hoja_6 = "1_MembresíasProyectadas_3"
+membresias_proyectadas_3 = worksheets_a_dataframe(nombre_libro, hoja_6)
 
 # Membresías proyectadas a seis meses
-hoja_6 = "1_MembresíasProyectadas_6"
-membresias_proyectadas_6 = worksheets_a_dataframe(nombre_libro, hoja_6)
+hoja_7 = "1_MembresíasProyectadas_6"
+membresias_proyectadas_6 = worksheets_a_dataframe(nombre_libro, hoja_7)
 
 # Tasas
-hoja_6 = "1_Tasas"
-tasas = worksheets_a_dataframe(nombre_libro, hoja_6)
+hoja_8 = "1_Tasas"
+tasas = worksheets_a_dataframe(nombre_libro, hoja_8)
 
 #------------------------------------------------------------------------------------------------#
 
@@ -144,14 +148,14 @@ if option_selected == "Planeación financiera":
 
     # Información de la Página
     expansion = st.expander ("Acerca de")
-    expansion.markdown("""* En la pantalla de *Planeación financiera* se abordan los componentes principales de la aplicación, los que permiten modificar las variables pertinentes de la organización. Entre las que podemos encontrar: Número de membresías, Cantidad de meses a mostrar, Tasa de interés, Precios, Porcentaje de comisiones y costos fijos. """)    
+    expansion.markdown("""* En la pantalla de *Planeación financiera* se abordan los componentes principales de la aplicación, los que permiten modificar las variables pertinentes de la organización. Entre las que podemos encontrar: Número de membresías activas en la actualidad, Cantidad de meses a proyectar en los escenarios, las Tasa de interés, los Precios de las membresías, los Porcentaje de comisiones y los costos fijos, que son los conceptos relacionados con el modelo financiero a utilizar: el estado de resultados. """)    
 
     # CONFIGURACIÓN DE LA PÁGINA Y EL SIDEBAR
 
     col1, col2, col3 = st.columns(3)
-    col1.metric("Membresías Básicas activas","65","+ 5")
-    col2.metric("Membresías Black activas","35","+ 3")
-    col3.metric("Membresías Platino activas","0","0")
+    col1.metric("Membresías Básicas activas",membresias_activas.iloc[0,0],"+ 5")
+    col2.metric("Membresías Black activas",membresias_activas.iloc[1,0],"+ 3")
+    col3.metric("Membresías Platino activas",membresias_activas.iloc[2,0],"0")
     style_metric_cards(border_left_color = "#27AE60")
     
     st.write("<h1 style='text-align: center; font-size: 1.6rem;'>Inputs de planeación financiera</h1>", unsafe_allow_html=True)
@@ -531,8 +535,8 @@ if option_selected == "Planeación financiera":
 elif option_selected == "Escenarios": 
     
     # Información de la Página
-    expansion = st.expander ("Acerca de")
-    expansion.markdown(""" En la pantalla de *Escenarios* se mostrarán los resultados de la “Planeación financiera”, dividimos los escenarios en que pueden ser optimistas o pesimistas, dentro de los elementos que podemos encontrar son: Escenario más probable, Escenario optimista, Escenario pesimista y Comparación de escenarios, así mismo se cuentan con “sliders” de variables a considerar (Tasa de inflación, Tasa de impuestos y Tasa de incremento mensual en membresías vendidas).""")
+    expansion = st.expander ("Acerca de *Escenarios* ")
+    expansion.markdown(""" En la pantalla de *Escenarios* se mostrarán los resultados de la “Planeación financiera” a partir de tres escenarios: el escenario más probable (derivado de los datos de entrada de la pestaña anterior), el escenario optimista y el escenario pesimista. Los controles que se muestran en esta pantalla permiten modificar variables como la Tasa de inflación, la Tasa de impuestos y la Tasa de incremento o decremento mensual en membresías vendidas, que permiten generar los diferentes escenarios a los que se podría enfrentar DocTour. Por último, se muestra una comparación de los tres escenarios. Es importante señalar que el manual de variables es relevante para esta pestaña, porque se describen las estrategias que permitirían modificar tanto los valores de estas variables como los que se muestran en la de *Planeación financiera*, y con ello poder construir escenarios con condiciones más realistas. """)
 
     # Obtener datoss
     meses_seleccionados = pd.read_excel("BD_DocTour.xlsx", sheet_name="1_Meses", index_col=0)
@@ -637,7 +641,8 @@ elif option_selected == "Escenarios":
         fig3_1 = px.line(
             data_frame=df_un_inflacion_1,
             color_discrete_map={"Básica":"#23B223","Black":"#2F7A2C","Platino":"#0A4A08"},
-            markers=True
+            markers=True,
+            labels = {"value":"Utilidades netas","index":"Meses"}
         )
         fig3_1.update_traces(line = dict(width = 4))
         columna3.write(fig3_1)
@@ -647,7 +652,8 @@ elif option_selected == "Escenarios":
         fig3_2 = px.line(
             data_frame = df_utilidad_neta_inflacion_mes_1,
             color_discrete_map={"Utilidades netas mensuales":"#17A589"},
-            markers=True
+            markers=True,
+            labels = {"value":"Utilidades netas","index":"Meses"}
         )
         fig3_2.update_traces(line = dict(width = 4))
         columna3.write(fig3_2)
@@ -746,7 +752,8 @@ elif option_selected == "Escenarios":
         fig4_1 = px.line(
             data_frame=df_un_inflacion_2,
             color_discrete_map={"Básica":"#23B223","Black":"#2F7A2C","Platino":"#0A4A08"},
-            markers=True
+            markers=True,
+            labels = {"value":"Utilidades netas","index":"Meses"}
         )
         fig4_1.update_traces(line = dict(width = 4))
         columna3.write(fig4_1)
@@ -755,7 +762,8 @@ elif option_selected == "Escenarios":
         fig4_2 = px.line(
             data_frame = df_utilidad_neta_inflacion_mes_2,
             color_discrete_map={"Utilidades netas mensuales":"#17A589"},
-            markers=True
+            markers=True,
+            labels = {"value":"Utilidades netas","index":"Meses"}
         )
         fig4_2.update_traces(line = dict(width = 4))
         columna3.write(fig4_2)        
@@ -853,7 +861,8 @@ elif option_selected == "Escenarios":
         fig5 = px.line(
             data_frame=df_un_inflacion_3,
             color_discrete_map={"Básica":"#23B223","Black":"#2F7A2C","Platino":"#0A4A08"},
-            markers=True
+            markers=True,
+            labels = {"value":"Utilidades netas","index":"Meses"}
         )
         fig5.update_traces(line = dict(width = 4))
         columna3.write(fig5)
@@ -862,7 +871,8 @@ elif option_selected == "Escenarios":
         fig5_2 = px.line(
             data_frame = df_utilidad_neta_inflacion_mes_3,
             color_discrete_map={"Utilidades netas mensuales":"#17A589"},
-            markers=True
+            markers=True,
+            labels = {"value":"Utilidades netas","index":"Meses"}
         )
         fig5_2.update_traces(line = dict(width = 4))
         columna3.write(fig5_2)
@@ -907,23 +917,28 @@ elif option_selected == "Escenarios":
 elif option_selected == "Indicadores": 
 
     # Información de la Página
-    expansion = st.expander ("Acerca de")
-    expansion.markdown("""* “Indicadores” última pantalla de la herramienta, que como su nombre lo indica, es una pantalla enfocada en el análisis de indicadores clave (Número de usuarios por membresías, Tiempo vs Márgenes, Tiempo vs Utilidad, Porcentaje de utilización de cada servicio, así como el servicio más utilizado). Esta sección es el resultado de todo el análisis llevado a cabo en las pantallas anteriores, por lo que no se cuenta con componentes modificables, a partir de aquí, se toman las decisiones adecuadas.""")
-    df_dash= pd.read_excel("BD_DocTour.xlsx",sheet_name="3_Membresías")   
-      
-    ab1, ab2 = st.columns((3,2))
-    ab1.markdown("<h1 style='text-align: center; color: #195419; font-size: 1.5rem;'>Número de ususarios por membresías</h1>", unsafe_allow_html=True)
-    fig = px.bar(df_dash, x="Membresias", y="Cantidad ",color=["#23B223", "#2F7A2C", "#0A4A08"],color_discrete_map="identity")
-    ab1.plotly_chart(fig)
+    expansion = st.expander("Acerca de *Indicadores* ")
+    expansion.markdown(""" En la pantalla de *Indicadores*, como su nombre lo indica, se hace un análisis de los indicadores clave de DocTour, incluyendo el número de colaboradores por tipo de membresía, Márgenes de utilidad y utilidades netas a través del tiempo, Porcentaje de utilización de cada servicio, así como el servicio más utilizado. Esta sección es el resultado del análisis llevado a cabo en las pantallas anteriores, por lo que no se cuenta con componentes modificables, y es a partir de aquí que se toman las decisiones más adecuadas para la empresa. \n""")
+    df_dash = pd.read_excel("BD_DocTour.xlsx", sheet_name = "1_MembresíasActivas")   
 
-    values=[65,35,100]
-    labels=["Básica","Black","Platino"]
-    ab2.markdown("<h1 style='text-align: center; color: #195419; font-size: 1.5rem;'>Gráfica de pastel del número de membresías</h1>", unsafe_allow_html=True)
+    columna1, columna2, columna3 = st.columns((2,2,1))
+    tipo_gráfico = columna2.radio("Gráfico a visualizar: ",("Gráfico de barras", "Gráfico de pastel"), horizontal=True)  
+    
+    col1, col2, col3 = st.columns((1,2,1))
+    if tipo_gráfico == "Gráfico de barras":
+        col2.markdown("<h1 style='text-align: center; color: #195419; font-size: 1.5rem;'>Número de colaboradores por membresías</h1>", unsafe_allow_html=True)
+        fig = px.bar(df_dash, x = "Membresías", y = "Cantidad",color=["#23B223", "#2F7A2C", "#0A4A08"],color_discrete_map="identity")
+        st.plotly_chart(fig)
+    elif tipo_gráfico == "Gráfico de pastel":
+        values = [membresias_activas.iloc[0,0],membresias_activas.iloc[1,0],membresias_activas.iloc[2,0]]
+        #st.write(membresias_activas.iloc[0,0])
+        labels = ["Básica","Black","Platino"]
+        col2.markdown("<h1 style='text-align: center; color: #195419; font-size: 1.5rem;'>Gráfica de pastel del número de membresías activas</h1>", unsafe_allow_html=True)
 
-    fig2 = px.pie(values=values, names=labels, color=labels, color_discrete_map={"Básica":"#23B223","Black":"#2F7A2C","Platino":"#0A4A08"})
-    fig2.update_traces(textinfo='value', textfont_size=20,hole=0.2,
-                  marker=dict(line=dict(color='#BACEB9', width=2)))
-    ab2.plotly_chart(fig2)
+        fig2 = px.pie(values=values, names=labels, color=labels, color_discrete_map={"Básica":"#23B223","Black":"#2F7A2C","Platino":"#0A4A08"})
+        fig2.update_traces(textinfo='value', textfont_size=20,hole=0.2,
+                    marker=dict(line=dict(color='#BACEB9', width=2)))
+        st.plotly_chart(fig2)
 
     st.write(" --- ")
 
